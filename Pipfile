@@ -1,0 +1,18 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pymysql = "*"
+boto3 = "*"
+fastparquet = "*"
+
+[dev-packages]
+ruff = "*"
+pytest = "*"
+ipykernel = "*"
+moto = {extras = ["s3"], version = "*"}
+
+[requires]
+python_version = "3.11"
