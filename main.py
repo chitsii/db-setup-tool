@@ -1,6 +1,6 @@
 from etl_task import Task
 from logger import get_logger
-from model import DataSrc, OperationTarget
+from models.operation import DataSrc, OperationTarget, OperationType
 from data_reader import LocalReader, AWSS3Reader
 from data_formatter import CSVFormatter, ParquetFormatter
 
@@ -12,25 +12,22 @@ if __name__ == "__main__":
 
     logger.info("truncate lang")
     truncate_lang = Task(
-        source=None,
         target=OperationTarget("mysql", "dev", "countrylanguage"),
-        operaton="truncate",
+        operaton=OperationType.TRUNCATE,
     )
     truncate_lang.run()
 
     logger.info("truncate_city")
     truncate_city = Task(
-        source=None,
         target=OperationTarget("mysql", "dev", "city"),
-        operaton="truncate",
+        operaton=OperationType.TRUNCATE,
     )
     truncate_city.run()
 
     logger.info("truncate country")
     truncate_country = Task(
-        source=None,
         target=OperationTarget("mysql", "dev", "country"),
-        operaton="truncate",
+        operaton=OperationType.TRUNCATE,
     )
     truncate_country.run()
 
@@ -43,9 +40,9 @@ if __name__ == "__main__":
 
         logger.info("insert country")
         insert_country = Task(
-            source=DataSrc(AWSS3Reader("s3://mybucket/country.parquet"), ParquetFormatter()),
             target=OperationTarget("mysql", "dev", "country"),
-            operaton="insert",
+            operaton=OperationType.INSERT,
+            source=DataSrc(AWSS3Reader("s3://mybucket/country.parquet"), ParquetFormatter()),
         )
         insert_country.run()
 
@@ -54,32 +51,32 @@ if __name__ == "__main__":
 
         logger.info("insert_city")
         insert_city = Task(
-            source=DataSrc(AWSS3Reader("s3://mybucket/csv/city.csv"), CSVFormatter()),
             target=OperationTarget("mysql", "dev", "city"),
-            operaton="insert",
+            operaton=OperationType.INSERT,
+            source=DataSrc(AWSS3Reader("s3://mybucket/csv/city.csv"), CSVFormatter()),
         )
         insert_city.run()
 
     logger.info("upsert city")
     upsert_city = Task(
-        source=DataSrc(LocalReader("tests/data/mysql/csv/city_upsert.csv"), CSVFormatter()),
         target=OperationTarget("mysql", "dev", "city"),
-        operaton="upsert",
+        operaton=OperationType.UPSERT,
+        source=DataSrc(LocalReader("tests/data/mysql/csv/city_upsert.csv"), CSVFormatter()),
     )
     upsert_city.run()
 
     insert_lang = Task(
-        source=DataSrc(LocalReader("tests/data/mysql/csv/countrylanguage.csv"), CSVFormatter()),
         target=OperationTarget("mysql", "dev", "countrylanguage"),
-        operaton="insert",
+        operaton=OperationType.INSERT,
+        source=DataSrc(LocalReader("tests/data/mysql/csv/countrylanguage.csv"), CSVFormatter()),
     )
     insert_lang.run()
 
     logger.info("delete city")
     delete_city = Task(
-        source=DataSrc(LocalReader("tests/data/mysql/csv/city_upsert.csv"), CSVFormatter()),
         target=OperationTarget("mysql", "dev", "city"),
-        operaton="delete",
+        operaton=OperationType.DELETE,
+        source=DataSrc(LocalReader("tests/data/mysql/csv/city_upsert.csv"), CSVFormatter()),
     )
     delete_city.run()
 

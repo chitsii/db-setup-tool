@@ -1,13 +1,4 @@
-from collections import namedtuple
-from typing import List, Literal, Optional, Tuple
-from data_reader import ReaderInterface
-from data_formatter import FormatterInterface
-
-# DataSrc = namedtuple("SrcPath", ["path", "reader_option", "formatter_option"])
-OperationTarget = namedtuple(
-    "OperationTarget", ["engine_option", "db_name", "table_name"]
-)
-Operation = Literal["reload", "truncate", "insert", "upsert", "delete"]
+from typing import List, Optional, Tuple
 
 
 class ColumnSchema:
@@ -55,13 +46,3 @@ class TableSchema:
         return tuple(
             schema.name for schema in self.column_schemas if schema.is_primary_key
         )
-
-
-class DataSrc:
-    def __init__(
-        self,
-        location: ReaderInterface,
-        formatter: FormatterInterface,
-    ):
-        self.location = location
-        self.format = formatter

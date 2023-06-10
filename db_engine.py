@@ -5,9 +5,10 @@ from typing import Dict, List, Optional
 import pymysql
 from pymysql.cursors import DictCursor
 
-from constant import MySQLConstant
 from logger import get_logger
-from model import ColumnSchema, OperationTarget, TableSchema
+from constant import MySQLConstant
+from models.operation import OperationTarget
+from models.model import TableSchema, ColumnSchema
 
 
 class DBEngineInterface(metaclass=ABCMeta):
