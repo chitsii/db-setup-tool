@@ -1,8 +1,8 @@
-from etl_task import Task
-from logger import get_logger
-from models.operation import DataSrc, OperationTarget, OperationType
-from data_reader import LocalReader, AWSS3Reader
-from data_formatter import CSVFormatter, ParquetFormatter
+from tasks.etl_task import Task
+from utils.logger import get_logger
+from tasks.models.operation import DataSrc, OperationTarget, OperationType
+from tasks.data_reader import LocalReader, AWSS3Reader
+from tasks.data_formatter import CSVFormatter, ParquetFormatter
 
 logger = get_logger(__name__)
 

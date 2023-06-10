@@ -1,10 +1,10 @@
-from db_engine import DBFactory
 
 from typing import Dict, List, Optional
 
 
-from models.operation import DataSrc, OperationTarget, OperationType
-from logger import get_logger
+from tasks.db_engine import DBFactory
+from tasks.models.operation import DataSrc, OperationTarget, OperationType
+from utils.logger import get_logger
 
 
 class TaskInterface:

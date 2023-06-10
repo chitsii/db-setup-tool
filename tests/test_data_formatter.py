@@ -1,7 +1,7 @@
 from textwrap import dedent
 from io import BytesIO
 
-from data_formatter import CSVFormatter
+from tasks.data_formatter import CSVFormatter
 
 
 def test_csv_format():

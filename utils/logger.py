@@ -1,6 +1,6 @@
 import logging
 
-from config import config
+from utils.config import config
 
 
 def get_logger(name, log_level: str = config["logging"]["level"]):

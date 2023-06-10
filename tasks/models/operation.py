@@ -1,7 +1,7 @@
 from enum import Enum, auto
 
-from data_reader import ReaderInterface
-from data_formatter import FormatterInterface
+from tasks.data_reader import ReaderInterface
+from tasks.data_formatter import FormatterInterface
 
 
 class DataSrc:

@@ -5,7 +5,7 @@ from urllib.parse import urlsplit
 from typing import BinaryIO
 from io import BytesIO
 
-from logger import get_logger
+from utils.logger import get_logger
 
 
 class ReaderInterface(metaclass=ABCMeta):
