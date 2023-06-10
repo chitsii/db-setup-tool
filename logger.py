@@ -1,6 +1,9 @@
 import logging
 
-def get_logger(name):
+from config import config
+
+
+def get_logger(name, log_level: str = config["logging"]["level"]):
     logger = logging.getLogger(name)
     if not logger.handlers:
         handler = logging.StreamHandler()
@@ -10,5 +13,5 @@ def get_logger(name):
         )
         handler.setFormatter(formatter)
         logger.addHandler(handler)
-        logger.setLevel('INFO')
+        logger.setLevel(log_level)
     return logger

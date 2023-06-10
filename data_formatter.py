@@ -43,20 +43,18 @@ class CSVFormatter(FormatterInterface):
     def infer_has_header(self, csv_string: str):
         sniffer = csv.Sniffer()
         has_header = sniffer.has_header(csv_string)
-        self.logger.info(f"has_header: {has_header}")
         return has_header
 
     def parse(
         self,
         bytes_input: BinaryIO,
     ):
-        self.logger.info(f"take it as csv. encoding: {self.encoding}")
-
         if self.has_header is None:
             head = bytes_input.read(10_000).decode(encoding=self.encoding)
             self.has_header = self.infer_has_header(head)
             bytes_input.seek(0)
 
+        self.logger.info(f"take it as csv. (encoding: {self.encoding}, has_header: {self.has_header})")
         if self.has_header is False:
             # ヘッダなしファイルの場合は指定されたカラム名を使用
             if self.column_names is None:
