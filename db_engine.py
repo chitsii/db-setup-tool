@@ -148,7 +148,7 @@ class MySQLEngine(DBEngineInterface):
             elif type_name in ("geometry",):
                 return ""
             elif type_name in ("null",):
-                return "NULL"
+                return None
             else:
                 msg = f"data_type: {type_name}() is not supported"
                 raise Exception(msg)
@@ -177,27 +177,36 @@ class MySQLEngine(DBEngineInterface):
         return affected_rows
 
     @staticmethod
-    def _escape_identifier(value):
+    def _escape(value):
         return pymysql.converters.escape_string(value)
 
-    @staticmethod
-    def _convert_null_values(value):
-        if value == "":
-            return None
-        return value
+    def validate_affected_count(self, affected_cnt: Optional[int], data: List[Dict]):
+        match affected_cnt:
+            case None:
+                if len(data) != 0:
+                    raise Exception(
+                        "affected count is not matched. "
+                        f"expected: {len(data)}, actual: {affected_cnt}"
+                    )
+            case _:
+                if affected_cnt != len(data):
+                    raise Exception(
+                        "affected count is not matched. "
+                        f"expected: {len(data)}, actual: {affected_cnt}"
+                    )
 
     @rollback_on_fail
     def insert(self, table_name: str, data: List[Dict]):
         cursor = self.connection.cursor()
-        expect_affected_row_cnt = len(data)
-
-        table_schema = self.get_table_schema(table_name)
 
         # 対象テーブルのカラム名からクエリを作成
+        table_schema = self.get_table_schema(table_name)
         tgt_columns = table_schema.get_column_names()
-        sql = """INSERT INTO {table_name} ({column_names}) VALUES ({values})""".format(
-            table_name=self._escape_identifier(table_name),
-            column_names=",".join([self._escape_identifier(k) for k in tgt_columns]),
+        sql = """
+        INSERT INTO {table_name} ({column_names}) VALUES ({values})
+        """.format(
+            table_name=self._escape(table_name),
+            column_names=",".join([self._escape(k) for k in tgt_columns]),
             values=",".join(["%s"] * len(tgt_columns)),
         )
         # 挿入する値を用意
@@ -210,26 +219,30 @@ class MySQLEngine(DBEngineInterface):
         ]
         self.logger.debug(f"{cursor.mogrify(sql, values[0])}")
         affected_rows = cursor.executemany(sql, values)
-        assert affected_rows == expect_affected_row_cnt, "affected_rows != expect_affected_row_cnt"
+
+        self.validate_affected_count(affected_rows, data)
+
         return affected_rows
 
     @rollback_on_fail
     def upsert(self, table_name: str, data: List[Dict]):
+        self.logger.info(f"start upsert {table_name}")
         cursor = self.connection.cursor()
 
-        table_schema = self.get_table_schema(table_name)
-
         # 対象テーブルのカラム名からクエリを作成
+        table_schema = self.get_table_schema(table_name)
         tgt_columns = table_schema.get_column_names()
 
-        sql = """\
+        sql = """
         INSERT INTO {table_name} ({column_names}) VALUES ({values}) as r
-        ON DUPLICATE KEY UPDATE {update_values}""".format(
-            table_name=self._escape_identifier(table_name),
-            column_names=",".join([self._escape_identifier(k) for k in tgt_columns]),
+        ON DUPLICATE KEY UPDATE {update_values}
+        """.format(
+            table_name=self._escape(table_name),
+            column_names=",".join([self._escape(k) for k in tgt_columns]),
             values=",".join(["%s"] * len(tgt_columns)),
             update_values=",".join([f"{k}=r.{k}" for k in tgt_columns]),
         )
+
         # 挿入する値を用意
         values = [
             [
@@ -240,30 +253,28 @@ class MySQLEngine(DBEngineInterface):
         ]
         self.logger.debug(f"{cursor.mogrify(sql, values[0])}")
         affected_rows = cursor.executemany(sql, values)
+
+        # self.validate_affected_count(affected_rows, data)
         return affected_rows
 
     @rollback_on_fail
     def delete(self, table_name: str, data: List[Dict]):
         self.logger.info(f"start delete {table_name}")
-
         cursor = self.connection.cursor()
-
         table_schema = self.get_table_schema(table_name)
         primary_keys = table_schema.get_pk_column_names()
-        sql = """DELETE FROM {table_name} WHERE {where}""".format(
+        sql = """
+        DELETE FROM {table_name} WHERE {where}
+        """.format(
             table_name=table_name,
             where=" AND ".join([f"{key}=%s" for key in primary_keys]),
         )
         values = [[row[col] for col in primary_keys] for row in data]
         self.logger.debug(f"{cursor.mogrify(sql, values[0])}")
         affected_rows = cursor.executemany(sql, values)
-        self.logger.info(f"affected_rows = {affected_rows}")
-        return affected_rows
 
-    @rollback_on_fail
-    def purge_binlog(self):
-        with self.connection.cursor() as cursor:
-            cursor.execute("PURGE BINARY LOGS BEFORE NOW() - INTERVAL 1 DAY")
+        self.validate_affected_count(affected_rows, data)
+        return affected_rows
 
     @rollback_on_fail
     def truncate(self, table_name: str):
@@ -273,6 +284,11 @@ class MySQLEngine(DBEngineInterface):
         affected_rows = cursor.execute(f"TRUNCATE TABLE {table_name}")
         cursor.execute("SET SESSION FOREIGN_KEY_CHECKS=1")
         return affected_rows
+
+    @rollback_on_fail
+    def purge_binlog(self):
+        with self.connection.cursor() as cursor:
+            cursor.execute("PURGE BINARY LOGS BEFORE NOW() - INTERVAL 1 DAY")
 
     @rollback_on_fail
     def optimize_table(self, table_name: str):

@@ -35,11 +35,11 @@ class Task(TaskInterface):
     def run(self):
         self.db_engine = DBFactory.get_engine(self.target)
         if self.source:
-            self.logger.info(f"read data from {self.source.location}")
             raw_data = self.source.location.read()
             self.data = self.source.format.parse(raw_data)
 
         # 実行
+        self.logger.info(f"{self.operation.name} {self.target}")
         match self.operation:
             case OperationType.RELOAD:
                 self.reload_table(self.data, self.target.table_name)

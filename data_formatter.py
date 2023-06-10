@@ -13,7 +13,7 @@ class FormatterInterface(metaclass=ABCMeta):
         raise NotImplementedError()
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}()"
+        return f"{self.__class__.__name__}"
 
 
 class CSVFormatter(FormatterInterface):
@@ -47,6 +47,8 @@ class CSVFormatter(FormatterInterface):
         has_header: Optional[bool] = None,
         column_names: Union[list, tuple, None] = None,
     ):
+        self.logger.info(f"take it as csv. encoding: {encoding}")
+
         if has_header is None:
             head = bytes_input.read(10_000).decode(encoding=encoding)
             self.infer_has_header(head)
@@ -67,37 +69,6 @@ class CSVFormatter(FormatterInterface):
         res = df.to_dict("records")
         return res
 
-    def parse_without_pandas(
-        self,
-        bytes_input: BinaryIO,
-        encoding: str = "utf-8",
-        has_header: Optional[bool] = None,
-        column_names: Union[list, tuple, None] = None,
-    ):
-        # CSV文字列を分割し、CSV様式・ヘッダ有無推測のため最初の100行を取得
-        csv_string = self.decode(bytes_input, encoding=encoding)
-        lines = csv_string.splitlines()
-        lines_top_n = "\n".join(lines[:100])
-
-        if has_header is None:
-            self.infer_has_header(lines_top_n)
-
-        if has_header is False:
-            # ヘッダなしの場合は指定されたカラム名を使用
-            if column_names is None:
-                raise ValueError("column_names must be specified when has_header=False")
-            # 与えられたかラム数がデータと一致するかチェック
-            first_line = next(csv.DictReader(lines[0]))  # type: ignore
-            assert len(first_line) == len(column_names), "column length mismatch."
-            reader = csv.DictReader(lines, fieldnames=column_names)
-        else:
-            # ヘッダありの場合はヘッダをそのままカラム名として使用
-            if column_names is not None:
-                reader = csv.DictReader(lines[1:], fieldnames=column_names)
-            else:
-                reader = csv.DictReader(lines)
-        return list(reader)
-
 
 class ParquetFormatter(FormatterInterface):
     """
@@ -112,6 +83,8 @@ class ParquetFormatter(FormatterInterface):
         self,
         bytes_input: BinaryIO
     ):
+        self.logger.info("take it as parquet.")
+
         df = pd.read_parquet(bytes_input)
         df = df.fillna("") # NaNを空文字に置換
         res = df.to_dict("records")

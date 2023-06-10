@@ -20,6 +20,9 @@ class OperationTarget:
         self.db_name = db_name
         self.table_name = table_name
 
+    def __repr__(self):
+        return f"{self.engine_option}://{self.db_name}.{self.table_name}"
+
 
 class OperationType(Enum):
     RELOAD = auto()

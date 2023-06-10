@@ -17,7 +17,7 @@ class ReaderInterface(metaclass=ABCMeta):
         raise NotImplementedError()
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}()"
+        return f"{self.__class__.__name__}"
 
 
 class LocalReader(ReaderInterface):
@@ -26,7 +26,7 @@ class LocalReader(ReaderInterface):
         self.path = path
 
     def read(self) -> BinaryIO:
-        self.logger.info(f"filepath: {self.path}")
+        self.logger.info(f"read binary from {self.path}")
         path = Path(self.path)
         assert path.exists(), f"指定ファイルが存在しません: {path}"
         with path.open("rb") as fb:
@@ -40,7 +40,7 @@ class AWSS3Reader(ReaderInterface):
         self.uri = s3_uri
 
     def read(self) -> BytesIO:
-        self.logger.info(f"s3_uri: {self.uri}")
+        self.logger.info(f"read binary from {self.uri}")
         bucket_name, prefix = self._parse_s3_uri(self.uri)
         self.s3 = boto3.resource("s3")
         self.bucket = self.s3.Bucket(bucket_name)  # type: ignore
