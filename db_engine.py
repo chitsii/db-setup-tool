@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 import pymysql
 from pymysql.cursors import DictCursor
 
-from config import config, AccessInfo
+from config import config, MySQLAccessInfo
 from logger import get_logger
 from constant import MySQLConstant
 from models.operation import OperationTarget
@@ -42,7 +42,7 @@ class DBEngineInterface(metaclass=ABCMeta):
 
 
 class MySQLEngine(DBEngineInterface):
-    def __init__(self, db_name: str, access_info: AccessInfo = config["credentials"]["mysql"]):
+    def __init__(self, db_name: str, access_info: MySQLAccessInfo = config["mysql"]):
         super().__init__(db_name)
         self.logger = get_logger(__name__)
         self.connection = pymysql.connect(

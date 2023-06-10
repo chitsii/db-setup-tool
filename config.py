@@ -6,19 +6,15 @@ class Logging(TypedDict):
     level: str
 
 
-class AccessInfo(TypedDict):
+class MySQLAccessInfo(TypedDict):
     host: str
     password: str
     port: int
     user: str
 
 
-class Credentials(TypedDict):
-    mysql: AccessInfo
-
-
 class ConfigStructure(TypedDict):
-    credentials: Credentials
+    mysql: MySQLAccessInfo
     logging: Logging
 
 
