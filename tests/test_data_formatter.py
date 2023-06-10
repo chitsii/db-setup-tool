@@ -1,4 +1,5 @@
 from textwrap import dedent
+from io import BytesIO
 
 from data_formatter import CSVFormatter
 
@@ -7,18 +8,23 @@ def test_csv_format():
     # 準備
     s = dedent(
         """\
-    'name','age','gender'
-    Alice,30,female
-    Bob,40,male
-    ,0,unknown
+    "name","age","gender"
+    "Alice",30,"female"
+    "Bob",40,"male"
+    "",0,"unknown"
     ,,
     """
     )
-    fmt = CSVFormatter()
-    fmt.has_header = True
 
     # 実行
-    res = fmt.parse(s)
+    fmt = CSVFormatter(
+        encoding="utf-8",
+        has_header=True,
+        column_names=None
+    )
+    res = fmt.parse(
+        bytes_input=BytesIO(s.encode("utf-8"))
+    )
 
     # 確認
     assert len(res) == 3, "行数が違います"
@@ -33,19 +39,23 @@ def test_csv_format_セル内改行あり():
     # 準備
     s = dedent(
         """\
-    'name','age','gender'
-    Alice,30,female
-    Bob,40,male
-    ,0,'unk
-    nown'
-    ,,
+    "name","age","gender"
+    "Alice",30,"female"
+    "Bob",40,"male"
+    "",0,"unk
+    nown"
     """
     )
-    fmt = CSVFormatter()
-    fmt.has_header = True
 
     # 実行
-    res = fmt.parse(s)
+    fmt = CSVFormatter(
+        encoding="utf-8",
+        has_header=True,
+        column_names=None
+    )
+    res = fmt.parse(
+        bytes_input=BytesIO(s.encode("utf-8")),
+    )
 
     # 確認
     assert len(res) == 3, "行数が違います"
@@ -60,23 +70,27 @@ def test_csv_format_ヘッダなし():
     # 準備
     s = dedent(
         """\
-    Alice,30,female
-    Bob,40,male
-    ,0,unknown
-    ,,
+    "Alice",30,"female"
+    "Bob",40,"male"
+    "",0,"unknown"
     """
     )
-    fmt = CSVFormatter()
-    fmt.has_header = False
 
     # 実行
-    res = fmt.parse(s)
+    fmt = CSVFormatter(
+        encoding="utf-8",
+        has_header=False,
+        column_names=["name", "age", "gender"]
+    )
+    res = fmt.parse(
+        bytes_input=BytesIO(s.encode("utf-8")),
+    )
 
     # 確認
     assert len(res) == 3, "行数が違います"
     assert len(res[0].keys()) == 3
     assert res == [
-        {"field_1": "Alice", "field_2": "30", "field_3": "female"},
-        {"field_1": "Bob", "field_2": "40", "field_3": "male"},
-        {"field_1": "", "field_2": "0", "field_3": "unknown"},
+        {"name": "Alice", "age": "30", "gender": "female"},
+        {"name": "Bob", "age": "40", "gender": "male"},
+        {"name": "", "age": "0", "gender": "unknown"},
     ]
