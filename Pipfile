@@ -17,3 +17,6 @@ moto = {extras = ["s3"], version = "*"}
 
 [requires]
 python_version = "3.11"
+
+[scripts]
+test = "pipenv run python -m pytest tests"
