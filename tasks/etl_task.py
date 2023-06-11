@@ -13,9 +13,7 @@ class TaskInterface:
         operaton: OperationType,
         source: Optional[DataSrc] = None,
     ):
-        self.source = source
-        self.target = target
-        self.operation = operaton
+        raise NotImplementedError()
 
     def run(self):
         raise NotImplementedError()
@@ -48,7 +46,9 @@ class DMLTask(TaskInterface):
         operaton: OperationType,
         source: Optional[DataSrc] = None,
     ):
-        super().__init__(target, operaton, source)
+        self.source = source
+        self.target = target
+        self.operation = operaton
         self.logger = get_logger(__name__)
 
         # 厳密にはTruncateはDDLだが、簡便さのためDMLTaskとして扱う

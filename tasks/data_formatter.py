@@ -95,12 +95,3 @@ class ParquetFormatter(FormatterInterface):
         df = df.fillna("")  # NaNを空文字に置換
         res = df.to_dict("records")
         return res
-
-
-def get_formatter(option: Literal["csv", "parquet"], **kwargs) -> FormatterInterface:
-    if option == "csv":
-        return CSVFormatter()
-    elif option == "parquet":
-        return ParquetFormatter()
-    else:
-        raise Exception

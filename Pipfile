@@ -14,9 +14,10 @@ ruff = "*"
 pytest = "*"
 ipykernel = "*"
 moto = {extras = ["s3"], version = "*"}
+pytest-cov = "*"
 
 [requires]
 python_version = "3.11"
 
 [scripts]
-test = "pipenv run python -m pytest tests"
+test = "pipenv run python -m pytest tests --cov --cov-branch --cov-report html:tests/cov_html -v"

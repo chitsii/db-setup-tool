@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from moto import mock_s3
 import boto3
 
@@ -28,12 +28,6 @@ class TestTask:
                 },
             }
             yield mock_config
-
-    @pytest.fixture
-    def mock_db_engine(self):
-        with patch("tasks.db_engine.DBFactory.get_engine") as mock_db_engine:
-            mock_db_engine.return_value = MagicMock()
-            yield mock_db_engine
 
     @pytest.mark.integration
     @pytest.mark.normal
