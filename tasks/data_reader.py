@@ -9,15 +9,9 @@ from utils.logger import get_logger
 
 
 class ReaderInterface(metaclass=ABCMeta):
-    def __init__(self):
-        self.logger = get_logger(__name__)
-
     @abstractmethod
     def read(self):
         raise NotImplementedError()
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}"
 
 
 class LocalReader(ReaderInterface):

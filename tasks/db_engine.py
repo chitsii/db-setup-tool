@@ -13,9 +13,6 @@ from tasks.models.model import TableSchema, ColumnSchema
 
 
 class DBEngineInterface(metaclass=ABCMeta):
-    def __init__(self, db_name):
-        self.db_name = db_name
-
     @abstractmethod
     def __enter__(self):
         raise NotImplementedError()
@@ -43,7 +40,7 @@ class DBEngineInterface(metaclass=ABCMeta):
 
 class MySQLEngine(DBEngineInterface):
     def __init__(self, db_name: str, access_info: MySQLAccessInfo = config["mysql"]):
-        super().__init__(db_name)
+        self.db_name = db_name
         self.logger = get_logger(__name__)
         self.connection = pymysql.connect(
             db=self.db_name,
@@ -120,15 +117,10 @@ class MySQLEngine(DBEngineInterface):
             {"table_name": table_name, "column_schemas": column_schemas}
         )
 
-    def _repr_for_empty_value(self, column_schema: Optional[ColumnSchema]):
+    def _repr_for_empty_value(self, column_schema: ColumnSchema):
         """挿入対象の値が空文字であるとき、
         挿入先カラムの型に応じてクエリ中での値の表現を返す
         """
-        if column_schema is None:
-            # 挿入対象テーブルに存在しないカラムに対しては
-            # メソッドは使わないため例外
-            raise Exception("column schema is not found")
-
         type_name = self.get_mysql_type_name(column_schema.data_type)
         if column_schema.is_nullable:
             return None
@@ -138,22 +130,20 @@ class MySQLEngine(DBEngineInterface):
             elif type_name in MySQLConstant.numeric_types:
                 return "0"
             elif type_name in MySQLConstant.datetime_types:
-                return "0000-00-00 00:00:00"
-            elif type_name in ("bit",):
-                return "0"
-            elif type_name in ("json",):
-                return "{}"
-            elif type_name in ("geometry",):
-                return ""
-            elif type_name in ("null",):
-                return None
+                self.logger.debug(f"{column_schema.name} is not NULLABLE, so set default datetime value 1970-01-01")
+                return "1970-01-01 09:00:01"
+                # データが空文字の場合、実際のデータがNoneなのか空文字か区別できないのが問題の本質なので、本来この操作は正しくない
+                # しかしINSERTがCSVのカラムをValuesとして使用する限り、Default値が設定されたNOT NULLカラムにインサートすると厳密なSQLモードの制約に引っかかる
+                # TODO: 本来はデフォルト値を使うようINSERT時に値をスキップする方が正しい
+            elif type_name in ('year'):
+                self.logger.debug(f"{column_schema.name} is not NULLABLE, so set default year value 1970")
+                return "1970"
             else:
-                msg = f"data_type: {type_name}() is not supported"
+                # TODO: interval, geometry, json型をサポートする
+                msg = f"data_type: {type_name} is not supported"
                 raise Exception(msg)
 
-    def _value_repr(self, column_schema: Optional[ColumnSchema], value: str):
-        if not column_schema:
-            raise Exception("column schema is not found")
+    def _value_repr(self, column_schema: ColumnSchema, value: str):
         if value == "":
             return self._repr_for_empty_value(column_schema)
         return value
@@ -172,7 +162,8 @@ class MySQLEngine(DBEngineInterface):
     def execute(self, query):
         cursor = self.connection.cursor()
         affected_rows = cursor.execute(query)
-        return affected_rows
+        res = cursor.fetchall()
+        return affected_rows, res
 
     @staticmethod
     def _escape(value):
@@ -210,7 +201,7 @@ class MySQLEngine(DBEngineInterface):
         # 挿入する値を用意
         values = [
             [
-                self._value_repr(table_schema.get_column_schema(col), row[col])
+                self._value_repr(table_schema.get_column_schema(col), row[col]) # type: ignore
                 for col in tgt_columns
             ]
             for row in data
@@ -244,15 +235,13 @@ class MySQLEngine(DBEngineInterface):
         # 挿入する値を用意
         values = [
             [
-                self._value_repr(table_schema.get_column_schema(col), row[col])
+                self._value_repr(table_schema.get_column_schema(col), row[col]) # type: ignore
                 for col in tgt_columns
             ]
             for row in data
         ]
         self.logger.debug(f"{cursor.mogrify(sql, values[0])}")
         affected_rows = cursor.executemany(sql, values)
-
-        # self.validate_affected_count(affected_rows, data)
         return affected_rows
 
     @rollback_on_fail
@@ -282,16 +271,6 @@ class MySQLEngine(DBEngineInterface):
         affected_rows = cursor.execute(f"TRUNCATE TABLE {table_name}")
         cursor.execute("SET SESSION FOREIGN_KEY_CHECKS=1")
         return affected_rows
-
-    @rollback_on_fail
-    def purge_binlog(self):
-        with self.connection.cursor() as cursor:
-            cursor.execute("PURGE BINARY LOGS BEFORE NOW() - INTERVAL 1 DAY")
-
-    @rollback_on_fail
-    def optimize_table(self, table_name: str):
-        with self.connection.cursor() as cursor:
-            cursor.execute(f"OPTIMIZE TABLE {table_name}")
 
     def commit(self):
         self._ping()

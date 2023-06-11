@@ -1,0 +1,4 @@
+"ID","Name","CountryCode","District","Population"
+1,UPSERT_1,AFG,Kabol,1780000
+2,UPSERT_2,AFG,Qandahar,237500
+3,UPSERT_3,AFG,Herat,186800

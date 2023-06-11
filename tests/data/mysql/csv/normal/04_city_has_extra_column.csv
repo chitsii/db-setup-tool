@@ -1,0 +1,4 @@
+"ID","Name","CountryCode",ExtraColumnMid,"District","Population","ExtraColumnLast"
+"10","EXTRA_COL_1","NLD",MID,"Noord-Brabant","193238","LAST"
+"11","EXTRA_COL_2","NLD",MID,"Groningen","172701","LAST"
+"12","EXTRA_COL_3","NLD",MID,"Noord-Brabant","160398","LAST"

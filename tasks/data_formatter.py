@@ -1,6 +1,6 @@
 from abc import abstractmethod, ABCMeta
 import csv
-from typing import Literal, Optional, Union, BinaryIO
+from typing import Optional, Union, BinaryIO, Hashable, Any
 
 import pandas as pd
 
@@ -11,9 +11,6 @@ class FormatterInterface(metaclass=ABCMeta):
     @abstractmethod
     def parse(self, bytes_input: BinaryIO, *args, **kwargs):
         raise NotImplementedError()
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}"
 
 
 class CSVFormatter(FormatterInterface):
@@ -37,8 +34,6 @@ class CSVFormatter(FormatterInterface):
         self.encoding = encoding
         self.logger = get_logger(__name__)
 
-    def decode(self, bytes_input: BinaryIO, encoding: str = "utf-8"):
-        return bytes_input.read().decode(encoding)
 
     def infer_has_header(self, csv_string: str):
         sniffer = csv.Sniffer()
@@ -48,7 +43,7 @@ class CSVFormatter(FormatterInterface):
     def parse(
         self,
         bytes_input: BinaryIO,
-    ):
+    ) -> list[dict[Hashable, Any]]:
         if self.has_header is None:
             head = bytes_input.read(10_000).decode(encoding=self.encoding)
             self.has_header = self.infer_has_header(head)

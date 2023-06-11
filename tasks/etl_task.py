@@ -1,20 +1,13 @@
 from typing import Dict, List, Optional
-
+from abc import abstractmethod, ABCMeta
 
 from tasks.db_engine import DBFactory
 from tasks.models.operation import DataSrc, OperationTarget, OperationType
 from utils.logger import get_logger
 
 
-class TaskInterface:
-    def __init__(
-        self,
-        target: OperationTarget,
-        operaton: OperationType,
-        source: Optional[DataSrc] = None,
-    ):
-        raise NotImplementedError()
-
+class TaskInterface(metaclass=ABCMeta):
+    @abstractmethod
     def run(self):
         raise NotImplementedError()
 
@@ -25,17 +18,25 @@ class DDLTask(TaskInterface):
         target: OperationTarget
     ):
         self.target = target
-        if self.target.table_name is not None:
-            self.logger.warning("table_name is ignored when executing DDLTask")
         self.logger = get_logger(__name__)
+        self.db_engine = DBFactory.get_engine(self.target)
+
+        if self.target.table_name is not None:
+            self.logger.warning(f"table_name: {self.target.table_name} is ignored when executing DDLTask")
 
     def run(self, sqls: List[str]):
-        self.db_engine = DBFactory.get_engine(self.target)
         self.logger.info(f"DDL {self.target}")
 
         with self.db_engine as db:
             for sql in sqls:
+                self.logger.debug(f"execute: {sql}")
                 db.execute(sql)
+            db.commit()
+
+    def purge_binlog(self):
+        self.logger.info("purge binlog")
+        with self.db_engine as db:
+            db.execute("PURGE BINARY LOGS BEFORE NOW()")
             db.commit()
 
 
@@ -78,9 +79,7 @@ class DMLTask(TaskInterface):
             case _:
                 raise NotImplementedError()
 
-    def __reload_table(self, data: Optional[List[Dict]], table_name):
-        if not data:
-            raise Exception("data is empty")
+    def __reload_table(self, data: List[Dict], table_name):
         with self.db_engine as db:
             db.truncate(table_name)
             db.insert(table_name, data)
@@ -91,23 +90,17 @@ class DMLTask(TaskInterface):
             db.truncate(table_name)
             db.commit()
 
-    def __insert_into_table(self, data: Optional[List[Dict]], table_name):
-        if not data:
-            raise Exception("data is empty")
+    def __insert_into_table(self, data: List[Dict], table_name):
         with self.db_engine as db:
             db.insert(table_name, data)
             db.commit()
 
-    def __upsert_into_table(self, data: Optional[List[Dict]], table_name):
-        if not data:
-            raise Exception("data is empty")
+    def __upsert_into_table(self, data: List[Dict], table_name):
         with self.db_engine as db:
             db.upsert(table_name, data)
             db.commit()
 
-    def __delete_from_table(self, data: Optional[List[Dict]], table_name):
-        if not data:
-            raise Exception("data is empty")
+    def __delete_from_table(self, data: List[Dict], table_name):
         with self.db_engine as db:
             db.delete(table_name, data)
             db.commit()

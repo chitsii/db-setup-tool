@@ -30,9 +30,7 @@ class MySQLConstant:
         "date",
         "datetime",
         "timestamp",
-        "interval",
         "newdate",
         "time",
         "timestamp",
-        "year",
     )

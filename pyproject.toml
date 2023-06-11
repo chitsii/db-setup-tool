@@ -1,0 +1,5 @@
+[tool.pytest.ini_options]
+markers = ["unit", "integration", "normal", "abnormal"]
+
+[tool.coverage.report]
+exclude_lines = ["@abstractmethod", "@abc.abstractmethod"]

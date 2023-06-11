@@ -20,4 +20,5 @@ pytest-cov = "*"
 python_version = "3.11"
 
 [scripts]
-test = "pipenv run python -m pytest tests --cov --cov-branch --cov-report html:tests/cov_html -v"
+test = "pipenv run python -m pytest tests --cov --cov-branch --cov-report html:tests/cov_html -vv"
+it = "pipenv run python -m pytest tests -vv --log-cli-level=INFO -m integration"
