@@ -1,4 +1,3 @@
-
 from typing import Dict, List, Optional
 
 
@@ -22,7 +21,27 @@ class TaskInterface:
         raise NotImplementedError()
 
 
-class Task(TaskInterface):
+class DDLTask(TaskInterface):
+    def __init__(
+        self,
+        target: OperationTarget
+    ):
+        self.target = target
+        if self.target.table_name is not None:
+            self.logger.warning("table_name is ignored when executing DDLTask")
+        self.logger = get_logger(__name__)
+
+    def run(self, sqls: List[str]):
+        self.db_engine = DBFactory.get_engine(self.target)
+        self.logger.info(f"DDL {self.target}")
+
+        with self.db_engine as db:
+            for sql in sqls:
+                db.execute(sql)
+            db.commit()
+
+
+class DMLTask(TaskInterface):
     def __init__(
         self,
         target: OperationTarget,
@@ -31,6 +50,11 @@ class Task(TaskInterface):
     ):
         super().__init__(target, operaton, source)
         self.logger = get_logger(__name__)
+
+        # 厳密にはTruncateはDDLだが、簡便さのためDMLTaskとして扱う
+        assert (
+            self.source or self.operation == OperationType.TRUNCATE
+        ), "source is required when operation is not truncate"
 
     def run(self):
         self.db_engine = DBFactory.get_engine(self.target)
@@ -41,20 +65,20 @@ class Task(TaskInterface):
         # 実行
         self.logger.info(f"{self.operation.name} {self.target}")
         match self.operation:
-            case OperationType.RELOAD:
-                self.reload_table(self.data, self.target.table_name)
             case OperationType.TRUNCATE:
-                self.truncate_table(self.target.table_name)
+                self.__truncate_table(self.target.table_name)
             case OperationType.INSERT:
-                self.insert_into_table(self.data, self.target.table_name)
+                self.__insert_into_table(self.data, self.target.table_name)
             case OperationType.UPSERT:
-                self.upsert_into_table(self.data, self.target.table_name)
+                self.__upsert_into_table(self.data, self.target.table_name)
             case OperationType.DELETE:
-                self.delete_from_table(self.data, self.target.table_name)
+                self.__delete_from_table(self.data, self.target.table_name)
+            case OperationType.RELOAD:
+                self.__reload_table(self.data, self.target.table_name)
             case _:
                 raise NotImplementedError()
 
-    def reload_table(self, data: Optional[List[Dict]], table_name):
+    def __reload_table(self, data: Optional[List[Dict]], table_name):
         if not data:
             raise Exception("data is empty")
         with self.db_engine as db:
@@ -62,26 +86,26 @@ class Task(TaskInterface):
             db.insert(table_name, data)
             db.commit()
 
-    def truncate_table(self, table_name):
+    def __truncate_table(self, table_name):
         with self.db_engine as db:
             db.truncate(table_name)
             db.commit()
 
-    def insert_into_table(self, data: Optional[List[Dict]], table_name):
+    def __insert_into_table(self, data: Optional[List[Dict]], table_name):
         if not data:
             raise Exception("data is empty")
         with self.db_engine as db:
             db.insert(table_name, data)
             db.commit()
 
-    def upsert_into_table(self, data: Optional[List[Dict]], table_name):
+    def __upsert_into_table(self, data: Optional[List[Dict]], table_name):
         if not data:
             raise Exception("data is empty")
         with self.db_engine as db:
             db.upsert(table_name, data)
             db.commit()
 
-    def delete_from_table(self, data: Optional[List[Dict]], table_name):
+    def __delete_from_table(self, data: Optional[List[Dict]], table_name):
         if not data:
             raise Exception("data is empty")
         with self.db_engine as db:

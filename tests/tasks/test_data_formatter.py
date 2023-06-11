@@ -1,9 +1,12 @@
+import pytest
+
 from textwrap import dedent
 from io import BytesIO
 
 from tasks.data_formatter import CSVFormatter
 
-
+@pytest.mark.unit
+@pytest.mark.normal
 def test_csv_format():
     # 準備
     s = dedent(
@@ -35,6 +38,8 @@ def test_csv_format():
         {"name": "", "age": "0", "gender": "unknown"},
     ]
 
+@pytest.mark.unit
+@pytest.mark.normal
 def test_csv_format_セル内改行あり():
     # 準備
     s = dedent(
@@ -66,6 +71,8 @@ def test_csv_format_セル内改行あり():
         {"name": "", "age": "0", "gender": "unk\nnown"},
     ]
 
+@pytest.mark.unit
+@pytest.mark.normal
 def test_csv_format_ヘッダなし():
     # 準備
     s = dedent(
