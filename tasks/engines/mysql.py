@@ -1,5 +1,5 @@
 import time
-from abc import ABCMeta, abstractmethod
+
 from typing import Dict, List, Optional
 
 import pymysql
@@ -8,34 +8,10 @@ from pymysql.cursors import DictCursor
 from utils.config import config, MySQLAccessInfo
 from utils.logger import get_logger
 from tasks.constant import MySQLConstant
-from tasks.models.operation import OperationTarget
+
 from tasks.models.model import TableSchema, ColumnSchema
+from tasks.engines.abstract import DBEngineInterface
 
-
-class DBEngineInterface(metaclass=ABCMeta):
-    @abstractmethod
-    def __enter__(self):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def __exit__(self, exc_type, exc_value, traceback):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def execute(self, query):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def truncate(self, table_name):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def insert(self, table_name, data):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def commit(self):
-        raise NotImplementedError()
 
 
 class MySQLEngine(DBEngineInterface):
@@ -82,9 +58,9 @@ class MySQLEngine(DBEngineInterface):
         """cursor.descriptionを使ってテーブルのスキーマを取得する
         例:
             (
-                ('id', <class 'int'>, None, 11, None, None, True),
-                ('name', <class 'str'>, None, 255, None, None, True),
-                ('email', <class 'str'>, None, 255, None, None, False)
+                ('id', 01, None, 11, None, None, True),
+                ('name', 02, None, 255, None, None, True),
+                ('email', 03, None, 255, None, None, False)
             )
         タプルの要素は以下の通り
             0 name: カラム名
@@ -283,11 +259,3 @@ class MySQLEngine(DBEngineInterface):
             self.connection.ping(reconnect=True)
             self.last_ping_time = current_time
 
-
-class DBFactory:
-    @staticmethod
-    def get_engine(db_engine: OperationTarget):
-        if db_engine.engine_option == "mysql":
-            return MySQLEngine(db_engine.db_name)
-        else:
-            raise NotImplementedError()

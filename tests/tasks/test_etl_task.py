@@ -8,6 +8,7 @@ from tasks.data_formatter import CSVFormatter, ParquetFormatter
 from tasks.models.operation import DataSrc, OperationTarget, OperationType
 from tasks.data_reader import LocalReader, AWSS3Reader
 
+from tasks.engines.factory import DBFactory
 
 class TestTask:
     ddl_queries = [
@@ -161,7 +162,6 @@ class TestTask:
 
 
         # 検証
-        from tasks.db_engine import DBFactory
         target = OperationTarget("mysql", "dev", None)
         with DBFactory.get_engine(target) as db:
             cnt, res = db.execute("SELECT * FROM city WHERE ID <= 12;")

@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional
 from abc import abstractmethod, ABCMeta
 
-from tasks.db_engine import DBFactory
+from tasks.engines.factory import DBFactory
 from tasks.models.operation import DataSrc, OperationTarget, OperationType
 from utils.logger import get_logger
 
